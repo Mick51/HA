@@ -1,0 +1,382 @@
+
+# Configure a default setup of Home Assistant (frontend, api, etc)
+default_config:
+frontend:
+  themes: !include_dir_merge_named themes/
+# Uncomment this if you are using SSL/TLS, running in Docker container, etc.
+#https:
+#  server_port: 8321
+
+# Duckdns
+http:
+  base_url: ''
+  ssl_certificate: /ssl/fullchain.pem
+  ssl_key: /ssl/privkey.pem
+  
+# Notify Google Mail.
+notify:
+  - name: smtp
+    platform: smtp
+    server: smtp.gmail.com
+    port: 587
+    timeout: 15
+    sender: ''
+    encryption: starttls
+    username: ''
+    password: ''
+    recipient: ''
+    sender_name: Home Assistant
+   
+# Favicons 
+favicon:
+  title: Home Assistant
+  icon_path: /local/favicons/
+  
+# Panel custom
+panel_custom:
+  - name: ha_server_con
+    sidebar_title: ServerControl
+    sidebar_icon: mdi:cog-transfer
+    js_url: /api/hassio/app/entrypoint.js
+    url_path: 'config/server_control'
+    embed_iframe: true
+    require_admin: true
+    config:
+      ingress: core_configurator          
+  - name: ha_integ
+    sidebar_title: Integrations
+    sidebar_icon: mdi:checkerboard
+    js_url: /api/hassio/app/entrypoint.js
+    url_path: 'config/integrations'
+    embed_iframe: true
+    require_admin: true
+    config:
+      ingress: core_configurator
+  
+# multiple entity
+lovelace:
+  resources:
+    - url: /hacsfiles/lovelace-multiple-entity-row/multiple-entity-row.js
+      type: module
+ 
+# Recorder
+recorder : 
+  purge_keep_days: 60 # durée de conservation des données
+  include:
+    domains:
+      - binary_sensor
+      - input_boolean
+      - input_datetime
+      - input_number
+      - input_select
+      - sensor
+      - switch
+      - person
+      - device_tracker
+      - light
+  exclude: # permet d'exclure tous les éléments listé ci-dessous de votre base de données
+    domains: # filtrage par domaine
+      - automation
+      - updater
+      - group
+      - media_player
+      - scene
+      - script
+      - sun
+      - weather
+      - zone
+    entities: # filtrage par entités spécifiques
+      - sensor.last_boot 
+      - sensor.date
+      - camera.aspirateur #utile afin de ne pas surcharger votre base de donnée avec les coordonnées et carte de votre aspirateur chargé toutes les 5 secondes
+    event_types: # filtrage par evenements
+      - call_service 
+  
+# Text to speech
+tts:
+  - platform: google_translate
+    language: 'fr'
+
+group: !include groups.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+# sensor
+sensor:
+  - platform: authenticated
+  
+  - platform: template
+    sensors:
+      linky_energy_kwh:
+        friendly_name: 'index KWh'
+        unit_of_measurement: 'kWh'
+        value_template: "{{ states('sensor.index') | float / 1000 }}"
+        icon_template: mdi:gauge
+  
+  - platform: prixCarburant
+    stationID:
+      - 51430007
+      - 51430002
+  
+  - platform: seventeentrack
+    username: ''
+    password: ''
+
+  - platform: govee_ble_hci
+    govee_devices:
+      - mac: "A4:C1:38:DA:34:E2"
+        name: Chambre
+      - mac: "A4:C1:38:9F:3F:CA"
+        name: SDB
+      - mac: "A4:C1:38:C7:31:D0"
+        name: Enfants
+      - mac: "A4:C1:38:3C:2D:E3"
+        name: Salon
+        
+# Ip Update
+  - platform: dnsip
+    name: wan_ip
+
+#....
+  - platform: systemmonitor
+    resources:
+      - type: processor_use
+      - type: disk_use_percent
+      - type: disk_use
+      - type: disk_free
+      
+      - type: processor_temperature
+      - type: memory_use
+      - type: memory_free
+      - type: swap_use
+      - type: memory_use_percent
+      - type: disk_use_percent
+        arg: /home
+      - type: ipv4_address
+        arg: eth0
+      - type: last_boot
+      
+# DeCONZ Firmware Updates:
+  # HACS version Installed
+  - platform: command_line
+    name: HACS Version Installed #sensor.hacs_version_installed
+    command: 'cat /config/.storage/core.device_registry | grep -A 3 "hacs.xyz" | grep "sw_version"'
+    scan_interval: 3600
+    value_template: '{{ value.split("\"")[3] }}'
+
+#--------------------------------------------------------
+  # Sensors to track updates to core components (core, audio, dns, CLI, observer and multicast)
+  - platform: command_line
+    name: Core Version # sensor.core_version
+    command: 'curl http://supervisor/core/info -H "Authorization: Bearer $(printenv SUPERVISOR_TOKEN)" | jq ''{"latest_version":.data.version_latest,"current_version":.data.version, "update_available":.data.update_available}'''
+    value_template: "{% if value_json.update_available %}on{% else %}off{% endif %}"
+    scan_interval: 3600
+    json_attributes:
+    - latest_version
+    - current_version 
+  - platform: command_line
+    name: HassOS Version # sensor.hassos_version
+    command: 'curl http://supervisor/os/info -H "Authorization: Bearer $(printenv SUPERVISOR_TOKEN)" | jq ''{"latest_version":.data.version_latest,"current_version":.data.version,"update_available":.data.update_available}'''
+    value_template: "{% if value_json.update_available %}on{% else %}off{% endif %}"
+    scan_interval: 3600
+    json_attributes:
+      - latest_version
+      - current_version
+  - platform: command_line
+    name: Audio Version # sensor.audio_version
+    command: 'curl http://supervisor/audio/info -H "Authorization: Bearer $(printenv SUPERVISOR_TOKEN)" | jq ''{"latest_version":.data.version_latest,"current_version":.data.version, "update_available":.data.update_available}'''
+    value_template: "{% if value_json.update_available %}on{% else %}off{% endif %}"
+    scan_interval: 3600
+    json_attributes:
+    - latest_version
+    - current_version
+  - platform: command_line
+    name: DNS Version # sensor.dns_version
+    command: 'curl http://supervisor/dns/info -H "Authorization: Bearer $(printenv SUPERVISOR_TOKEN)" | jq ''{"latest_version":.data.version_latest,"current_version":.data.version, "update_available":.data.update_available}'''
+    value_template: "{% if value_json.update_available %}on{% else %}off{% endif %}"
+    scan_interval: 3600
+    json_attributes:
+    - latest_version
+    - current_version
+  - platform: command_line
+    name: CLI Version # sensor.cli_version
+    command: 'curl http://supervisor/cli/info -H "Authorization: Bearer $(printenv SUPERVISOR_TOKEN)" | jq ''{"latest_version":.data.version_latest,"current_version":.data.version, "update_available":.data.update_available}'''
+    value_template: "{% if value_json.update_available %}on{% else %}off{% endif %}"
+    scan_interval: 3600
+    json_attributes:
+    - latest_version
+    - current_version
+  - platform: command_line
+    name: Multicast Version # sensor.multicast_version
+    command: 'curl http://supervisor/multicast/info -H "Authorization: Bearer $(printenv SUPERVISOR_TOKEN)" | jq ''{"latest_version":.data.version_latest,"current_version":.data.version, "update_available":.data.update_available}'''
+    value_template: "{% if value_json.update_available %}on{% else %}off{% endif %}"
+    scan_interval: 3600
+    json_attributes:
+    - latest_version
+    - current_version
+  - platform: command_line
+    name: Observer Version # sensor.observer_version
+    command: 'curl http://supervisor/observer/info -H "Authorization: Bearer $(printenv SUPERVISOR_TOKEN)" | jq ''{"latest_version":.data.version_latest,"current_version":.data.version, "update_available":.data.update_available}'''
+    value_template: "{% if value_json.update_available %}on{% else %}off{% endif %}"
+    scan_interval: 3600
+    json_attributes:
+    - latest_version
+    - current_version
+#--------------------------------------------------------
+# Sensor to track available updates for the supervisor & supervisor addons list
+  - platform: command_line
+    name: Supervisor Version # sensor.supervisor_version
+    command: 'curl http://supervisor/supervisor/info -H "Authorization: Bearer $(printenv SUPERVISOR_TOKEN)" | jq ''{"latest_version":.data.version_latest,"current_version":.data.version,"update_available":.data.update_available,"addons":[.data.addons[] | select(.update_available)]}'''
+    value_template: "{% if (value_json.addons | length > 0) or value_json.update_available %}on{% else %}off{% endif %}" 
+    scan_interval: 3600 #check every hour (default is 60- every minute)
+    json_attributes:
+    - latest_version
+    - current_version
+    - addons
+
+binary_sensor:
+  - platform: template
+    sensors:
+      version_update_issues:
+        friendly_name: 'Version Update Issues'
+        device_class: problem
+        value_template: >-
+          {{ (state_attr('binary_sensor.version_update_issues', 'status')).outdated|count > 0 }}
+        attribute_templates:
+          status: >-
+            {% set ns = namespace(outdated = [], up_to_date = [], optional_updates = []) -%}
+            {%- for _updateSensor in (expand(states.sensor)|list) if _updateSensor.entity_id.endswith('_version') -%}
+            {%- set _sensorName = _updateSensor.entity_id -%}
+            {%- if _updateSensor.state == "on" -%}
+              {%- set ns.outdated = ns.outdated + [_sensorName] -%}
+            {%- else -%}
+              {%- if _updateSensor.attributes.current_version!=_updateSensor.attributes.latest_version -%}
+                {%- set ns.optional_updates = ns.optional_updates + [_sensorName] -%}
+              {%- else -%}
+                {%- set ns.up_to_date = ns.up_to_date + [_sensorName] -%}
+              {%- endif -%}
+            {%- endif -%}
+            {% endfor %}
+            {{ "{{\"up_to_date\": {}, \"optional_updates\": {}, \"outdated\": {} }}".format(ns.up_to_date, ns.optional_updates, ns.outdated) }}
+
+      
+# wiz light
+light:
+  - platform: wiz_light
+    name: Salle a manger
+    host: 192.168.1.49
+    
+  - platform: wiz_light
+    name: WC
+    host: 192.168.1.22
+    
+  - platform: wiz_light
+    name: Chambre enfants
+    host: 192.168.1.36
+    
+  - platform: wiz_light
+    name: Salon
+    host: 192.168.1.14
+    
+  - platform: wiz_light
+    name: Chambre Parental
+    host: 192.168.1.23
+    
+  - platform: wiz_light
+    name: Salle de bain
+    host: 192.168.1.48
+
+switch:
+
+
+  - platform: wiz_light
+    name: Smartplug aquarium
+    host: 192.168.1.15
+ 
+  - platform: wiz_light
+    name: Prise Salon
+    host: 192.168.1.24
+    
+  - platform: wiz_light
+    name: Prise sapin
+    host: 192.168.1.50
+    
+  - platform: wiz_light
+    name: Prise chambre
+    host: 192.168.1.52
+    
+  - platform: wiz_light
+    name: Prise enfants
+    host: 192.168.1.53
+    
+# Wake lan pc
+  - platform: wake_on_lan
+    mac: ''
+    name: “pc-mick” 
+    host: ''
+    turn_off:
+      service: hassio.addon_stdin
+      data:
+        addon: core_rpc_shutdown
+        input: pc-mick
+
+# Xiaomi Mi
+vacuum:
+  - platform: miio2
+    host: 192.168.1.12
+    token: ''
+    name: Robot Aspirateur
+
+camera:
+  - platform: xiaomi_cloud_map_extractor
+    host: 192.168.1.12
+    token: ''
+    username: ''
+    password: ''
+    draw: ['all']
+    attributes:
+      - calibration_points
+      - charger
+      - goto
+      - goto_path
+      - goto_predicted_path
+      - image
+      - is_empty
+      - map_name
+      - no_go_areas
+      - no_mopping_areas
+      - obstacles
+      - path
+      - room_numbers
+      - rooms
+      - vacuum_position
+      - vacuum_room
+      - walls
+      - zones
+    auto_update: true
+
+utility_meter:
+  energie_quotidienne:
+    source: sensor.linky_energy_kwh
+    cycle: daily
+  energie_mensuelle:
+    source: sensor.linky_energy_kwh
+    cycle: monthly
+    
+# usage jour  
+  energy_total_linky_usage_daily:
+    source: sensor.linky_energy_kwh
+    cycle: daily
+# usage semaine
+  energy_total_linky_usage_weekly:
+    source: sensor.linky_energy_kwh
+    cycle: weekly
+# usage mois
+  energy_total_linky_usage_monthly:
+    source: sensor.linky_energy_kwh
+    cycle: monthly
+#usage an
+  energy_total_linky_usage_yearly:
+    source: sensor.linky_energy_kwh
+    cycle: yearly
