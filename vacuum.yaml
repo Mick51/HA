@@ -1,0 +1,29 @@
+type: custom:vacuum-card
+entity: vacuum.robot_aspirateur
+actions:
+  start:
+    service: xiaomi_miio.vacuum_clean_segment
+    service_data:
+      entity_id: vacuum.robot_aspirateur
+      segments:
+        - 16
+        - 20
+cleaning:
+  - attribute: cleaned_area
+    unit: m2
+    subtitle: Cleaning area
+  - attribute: cleaning_time
+    unit: minutes
+    subtitle: Cleaning time
+shortcuts:
+  - name: Clean living room
+    service: script.clean_living_room
+    icon: mdi:sofa
+  - name: Clean bedroom
+    service: script.clean_bedroom
+    icon: mdi:bed-empty
+  - name: Clean kitchen
+    service: script.clean_kitchen
+    icon: mdi:silverware-fork-knife
+compact_view: false
+show_toolbar: true
