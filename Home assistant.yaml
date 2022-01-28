@@ -1,0 +1,140 @@
+type: picture-elements
+image: /hacsfiles/homeassistant (3).png
+style:
+  '#root>bar-card':
+    $: |
+      ha-card {
+        background: none;
+        box-shadow: none;
+      }
+      bar-card-name {
+        color: white;
+        font-size: 100%;
+        font-weight: normal;
+        margin: 4px;
+      }
+      bar-card-currentbar {
+        border-radius: 7pt;
+      }
+      bar-card-backgroundbar {
+        border-shadow: 2pt;
+        margin-top: -2pt;
+        margin-left: -2pt;
+        border-radius: 7pt;
+        border-style: solid;
+        background: rgba(255, 0, 0, 0.8);
+      }
+      bar-card-value {
+        font-size: 100%;
+        color: white;
+        font-weight: bold;
+        margin: 5px;
+      }
+elements:
+  - type: state-label
+    entity: binary_sensor.rpi_power_status
+    prefix: 'Power Status Alimentation : '
+    style:
+      color: white
+      font-size: 90%
+      left: 75%
+      top: 25%
+  - type: state-label
+    entity: binary_sensor.updater
+    prefix: 'Update Home Assistant : '
+    style:
+      color: white
+      font-size: 90%
+      left: 75%
+      top: 20%
+  - type: custom:bar-card
+    columns: 5
+    direction: up
+    width: 10px
+    height: 90px
+    positions:
+      icon: 'off'
+      indicator: 'off'
+      minmax: 'off'
+      title: outside
+      value: outside
+      name: outside
+    style:
+      left: 50%
+      top: 68%
+      width: 100%
+      scale: 100%
+    entities:
+      - entity: sensor.processor_use
+        max: 100
+        min: 0
+        name: Cpu
+        margin-top: 2pt;
+        severity:
+          - color: '#40bf40'
+            from: 0
+            to: 40
+          - color: '#ffde00'
+            from: 41
+            to: 80
+          - color: '#fd0000'
+            from: 81
+            to: 100
+      - entity: sensor.processor_temperature
+        max: 100
+        min: 0
+        name: Temperature
+        decimal: 1
+        severity:
+          - color: '#40bf40'
+            from: 0
+            to: 55
+          - color: '#ffde00'
+            from: 55
+            to: 75
+          - color: '#fd0000'
+            from: 75
+            to: 100
+      - entity: sensor.memory_use
+        max: 8096
+        min: 0
+        name: Memory
+        decimal: 0
+        severity:
+          - color: '#40bf40'
+            from: 0
+            to: 4000
+          - color: '#ffde00'
+            from: 4001
+            to: 5500
+          - color: '#fd0000'
+            from: 5501
+            to: 8096
+      - entity: sensor.disk_use_percent_home
+        max: 64
+        min: 0
+        name: Disk
+        decimal: 0
+        severity:
+          - color: '#40bf40'
+            from: 0
+            to: 25
+          - color: '#ffde00'
+            from: 25
+            to: 50
+          - color: '#fd0000'
+            from: 50
+      - entity: sensor.swap_use
+        max: 1024
+        min: 0
+        name: Swap
+        decimal: 0
+        severity:
+          - color: '#40bf40'
+            from: 0
+            to: 640
+          - color: '#ffde00'
+            from: 640
+            to: 768
+          - color: '#fd0000'
+            from: 768
