@@ -20,7 +20,7 @@ cards:
       action: url
       confirmation:
         text: de vouloir accéder à Home Assistant
-      url_path: https://jarvis51100.duckdns.org:8123/
+      url_path: https://"""""""":8123/
     hold_action:
       action: none
   - type: entities
