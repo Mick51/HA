@@ -1,0 +1,237 @@
+type: custom:vertical-stack-in-card
+card_mod:
+  style: |
+    ha-card {
+      margin-top: 0em;
+        }         
+mode: vertical
+cards:
+  - type: picture-entity
+    entity: binary_sensor.updater
+    image: /local/image/hass.png
+    aspect_ratio: 30%
+    show_name: true
+    show_state: false
+    name: Serveur HASS
+    state_image:
+      Sécurisé: /local/image/hass.png
+      'off': /local/image/hass.png
+    tap_action:
+      action: url
+      confirmation:
+        text: de vouloir accéder à Home Assistant
+      url_path: https://jarvis51100.duckdns.org:8123/
+    hold_action:
+      action: none
+  - type: entities
+    card_mod:
+      style:
+        .: |
+          #states {
+            margin-top: -0.5em;
+          }
+          #states > div > button-card {
+            margin: -0.5em 0 1.4em 1.05em;
+          }
+        '#states>div>hui-element>hui-markdown-card':
+          $:
+            ha-card>ha-markdown:
+              $: |
+                ha-markdown-element {
+                  cursor: default;
+                }
+                ha-markdown-element>p>span {
+                  font-family: Raleway;
+                  font-size: 1.5em;
+                  font-weight: 500;
+                  vertical-align: 30%;
+                }
+                ha-markdown-element>p>span>ha-icon {
+                  vertical-align: 10%;
+                  opacity: 0.5;
+                }
+                ha-markdown-element>p>b {
+                  font-family: Raleway;
+                  font-size: 1.2em;
+                  font-weight: 500;
+                  line-height: 1.9em;
+                  opacity: 0.5;
+                }
+                ha-markdown-element>ul {
+                  font-family: SF Display;
+                  font-size: 1.1em;
+                  padding-left: 2.5em;
+                }
+                ha-markdown-element>ul>li {
+                  margin-bottom: 0.4em;
+                }
+                ha-markdown-element>ul>li:last-child {
+                  margin-bottom: 0px;
+                }
+    entities:
+      - type: custom:hui-element
+        card_type: markdown
+        content: >
+          {% if states('sensor.hass_version_installed') | regex_search('b') %}
+          <span><ha-icon icon="mdi:home-assistant"></ha-icon> Home Assistant {{
+          states('sensor.hass_version_installed') }}</span><br> {% if
+          states('sensor.hass_version_installed') ==
+          states('sensor.hass_version_latest_beta') %} <b>Aucune mise à jour</b>
+          {% else %} <b>{{ states('sensor.hass_version_latest_beta') }}
+          disponible</b> {{ '\U0001f389' }}
+
+          {% if states('sensor.hass_version_latest_beta') ==
+          states('sensor.hass_release_notes_rc') %} {{-
+          state_attr('sensor.hass_release_notes_rc', 'body') }} {% endif %} {%
+          endif %} {% else %} <span><ha-icon
+          icon="mdi:home-assistant"></ha-icon> Home Assistant {{
+          states('sensor.hass_version_installed') }}</span><br> {% if
+          states('sensor.hass_version_installed') ==
+          states('sensor.hass_version_latest') %} <b>Aucune mise à jour</b> {%
+          else %} <b>{{ states('sensor.hass_version_latest') }} disponible</b>
+          {{ '\U0001f389' }}
+
+          {% if states('sensor.hass_version_latest') ==
+          states('sensor.hass_release_notes') %} {{-
+          state_attr('sensor.hass_release_notes', 'body') }} {% endif %} {%
+          endif %} {% endif %}
+      - type: custom:hui-element
+        card_type: markdown
+        content: >-
+          <span><ha-icon icon="hacs:hacs"></ha-icon> Hacs Community Store
+          {{states('sensor.hacs_version') }}  </span><br> {% if
+          is_state('sensor.hacs', '0') or is_state('sensor.hacs','unknown') %}
+          <b>Aucune mise à jour</b> {% else
+           %} <b>{{states('sensor.hacs') }} {{ 'mise à jour disponible' if
+          is_state('sensor.hacs', '1') else 'mises à jour disponibles' }}</b>
+          {{'\U0001f389' }}
+
+           {% for repo in state_attr('sensor.hacs', 'repositories') %} -
+          {{repo.display_name }} - New: {{ repo.available_version }} / Current:
+          {{repo.installed_version }}  https://github.com/{{
+          repo.name}}/releases  {% endfor %} {% endif %}
+      - type: divider
+        style:
+          height: 1px
+          width: 90%
+          margin-left: auto
+          margin-right: auto
+          background: '#62717b'
+      - entity: sensor.disk_use_percent
+      - entity: sensor.memory_free
+      - type: divider
+        style:
+          height: 1px
+          width: 90%
+          margin-left: auto
+          margin-right: auto
+          background: '#62717b'
+      - entity: sensor.cert_expiry_timestamp_jarvis51100_duckdns_org_8123
+        name: Certificat
+        card_mod:
+          style:
+            hui-generic-entity-row:
+              $: |
+                /* Couleur de l'icône */ state-badge{
+                  color: green;
+                }
+                /* Couleur de l'état */ .info {
+                  color: green;
+                  text-transform: uppercase;
+                }
+            .: |
+              /* Couleur de l'état */ .text-content {
+                color: green;
+              }
+  - type: divider
+    style:
+      height: 1px
+      width: 90%
+      margin-left: auto
+      margin-right: auto
+      background: '#62717b'
+  - type: horizontal-stack
+    cards:
+      - type: horizontal-stack
+        cards:
+          - type: custom:mini-graph-card
+            card_mod:
+              style: |
+                ha-card {
+                  font-family: var(--primary-font-family);
+                }
+                .graph {
+                  padding-top: 0px;
+                  padding-bottom: 0px;
+                }
+                .info {
+                  padding-bottom: 0px;
+                }
+                .flex {
+                  padding-bottom: 10px;
+                }
+            entities:
+              - sensor.processor_use
+            name: CPU
+            hour24: true
+            align_state: center
+            align_icon: right
+            font_size: 100
+            font_size_header: 11
+            hours_to_show: 24
+            color_thresholds:
+              - color: '#ef1d0f'
+                value: 100
+              - color: '#ef5a0f'
+                value: 75
+              - color: '#f0da11'
+                value: 50
+              - color: '#11f13a'
+                value: 20
+              - color: '#1da4f2'
+                value: 0
+            line_color: var(--accent-color)
+            line_width: 4
+            animate: true
+            points_per_hour: 2
+            show:
+              fill: false
+              graph: line
+              extrema: true
+              icon: true
+              name: true
+      - type: custom:mini-graph-card
+        card_mod:
+          style: |
+            ha-card {
+              font-family: var(--primary-font-family);
+            }
+            .graph {
+              padding-top: 0px;
+              padding-bottom: 0px;
+            }
+            .info {
+              padding-bottom: 0px;
+            }
+            .flex {
+              padding-bottom: 10px;
+            }
+        entities:
+          - sensor.home_assistant_v2_db
+        name: Database
+        hour24: true
+        align_state: center
+        align_icon: right
+        font_size: 100
+        font_size_header: 11
+        hours_to_show: 24
+        line_color: var(--accent-color)
+        line_width: 4
+        animate: true
+        points_per_hour: 2
+        show:
+          fill: false
+          graph: bar
+          extrema: true
+          icon: true
+          name: true
