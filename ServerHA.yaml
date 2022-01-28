@@ -126,7 +126,7 @@ cards:
           margin-left: auto
           margin-right: auto
           background: '#62717b'
-      - entity: sensor.cert_expiry_timestamp_jarvis51100_duckdns_org_8123
+      - entity: sensor.cert_expiry_timestamp_''''''''_duckdns_org_8123
         name: Certificat
         card_mod:
           style:
