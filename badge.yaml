@@ -1,0 +1,12 @@
+badges:
+      - entity: person.mikael
+        name: Mikael
+        style: |
+          :host {
+            {% if is_state('person.mikael','not_home') %}
+             --label-badge-red: purple;
+             {% endif %}
+            {% if is_state('person.mikael','home') %}
+             --label-badge-red: green;
+             {% endif %}
+          }
